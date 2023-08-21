@@ -68,25 +68,6 @@
 6. View——>渲染，View 会根据传进来的 Model 模型数据进行渲染，此处的 Model 实际是一个 Map 数据结构，因此很容易支持其他视图技术；
 7. 返回控制权给 DispatcherServlet，由 DispatcherServlet 返回响应给用户，到此一个流程结束。
 
-
-
-@Controller： 用于标识是处理器类；
-@RequestMapping： 请求到处理器功能方法的映射规则；
-@RequestParam： 请求参数到处理器功能处理方法的方法参数上的绑定；
-@ModelAttribute： 请求参数到命令对象的绑定；
-@SessionAttributes： 用于声明 session 级别存储的属性，放置在处理器类上，通常列出模型属性（如@ModelAttribute）对应的名称，则这些属性会透明的保存到 session 中；
-@InitBinder： 自定义数据绑定注册支持，用于将请求参数转换到命令对象属性的对应类型；
-
-@CookieValue： cookie 数据到处理器功能处理方法的方法参数上的绑定；
-@RequestHeader： 请求头（header）数据到处理器功能处理方法的方法参数上的绑定；
-@RequestBody： 请求的 body 体的绑定（通过 HttpMessageConverter 进行类型转换）；
-@ResponseBody： 处理器功能处理方法的返回值作为响应体（通过 HttpMessageConverter 进行类型转换）；
-@ResponseStatus： 定义处理器功能处理方法/异常处理器返回的状态码和原因；
-@ExceptionHandler： 注解式声明异常处理器；
-@PathVariable： 请求 URI 中的模板变量部分到处理器功能处理方法的方法参数上的绑定，从而支持 RESTful 架构风格的 URI；
-
-
-
 # DispatcherServlet
 
 ## DispatcherServlet 初始化
@@ -109,3 +90,229 @@
 
 # Controller 接口控制器
 
+> Controller 控制器，是 MVC 中的部分 C，为什么是部分呢？因为此处的控制器主要负责功能处理部分：
+> 1、收集、验证请求参数并绑定到命令对象；
+> 2、将命令对象交给业务对象，由业务对象处理并返回模型数据；
+> 3、返回 ModelAndView（Model 部分是业务对象返回的模型数据，视图部分为逻辑视图名
+
+> 还记得 DispatcherServlet 吗？主要负责整体的控制流程的调度部分：
+> 1、负责将请求委托给控制器进行处理；
+> 2、根据控制器返回的逻辑视图名选择具体的视图进行渲染（并把模型数据传入）。
+> **因此 MVC 中完整的 C（包含控制逻辑+功能处理）由（DispatcherServlet + Controller）组成。**
+
+**因此此处的控制器是 Web MVC 中部分，也可以称为页面控制器、动作、处理器。**
+
+## 注解式控制器
+
+### Spring2.5 之前
+
+> 我们都是通过实现 Controller 接口或其实现来定义我们的处理器
+
+### Spring2.5
+
+> 引入注解式处理器支持，通过 @Controller 和 @RequestMapping 注 解定义我们的处理器类。并且提供了一组强大的注解，需要通过处理器映射 DefaultAnnotationHandlerMapping 和处理器适配器 AnnotationMethodHandlerAdapter 来开启支持 @Controller 和 @RequestMapping 注解的处理器。
+
+- @Controller： 用于标识是处理器类；
+- @RequestMapping： 请求到处理器功能方法的映射规则；
+- @RequestParam： 请求参数到处理器功能处理方法的方法参数上的绑定；
+- @ModelAttribute： 请求参数到命令对象的绑定；
+- @SessionAttributes： 用于声明 session 级别存储的属性，放置在处理器类上，通常列出模型属性（如@ModelAttribute）对应的名称，则这些属性会透明的保存到 session 中；
+- @InitBinder： 自定义数据绑定注册支持，用于将请求参数转换到命令对象属性的对应类型；
+
+### Spring3.0
+
+> 引入 RESTful 架构风格支持（通过 @PathVariable 注解和一些其他特性支持），且又引入了更多的注解支持
+
+- @CookieValue： cookie 数据到处理器功能处理方法的方法参数上的绑定；
+- @RequestHeader： 请求头（header）数据到处理器功能处理方法的方法参数上的绑定；
+- @RequestBody： 请求的 body 体的绑定（通过 HttpMessageConverter 进行类型转换）；
+- @ResponseBody： 处理器功能处理方法的返回值作为响应体（通过 HttpMessageConverter 进行类型转换）；
+- @ResponseStatus： 定义处理器功能处理方法/异常处理器返回的状态码和原因；
+- @ExceptionHandler： 注解式声明异常处理器；
+- @PathVariable： 请求 URI 中的模板变量部分到处理器功能处理方法的方法参数上的绑定，从而支持 RESTful 架构风格的 URI；
+
+### Spring3.1
+
+> 使用新的 HandlerMapping 和 HandlerAdapter 来支持 @Contoller 和 @RequestMapping 注解处理器 
+>
+> 新的@Contoller 和@RequestMapping 注解支持类：处理器映射 RequestMappingHandlerMapping 和处理器适配器
+> RequestMappingHandlerAdapter 组合来代替 Spring2.5 开始的处理器映射 DefaultAnnotationHandlerMapping 和处理器适配器 AnnotationMethodHandlerAdapter，提供更多的扩展点。
+
+## 注解使用示例
+### 控制器实现
+
+```java
+package cn.javass.chapter6.web.controller;
+// 省略import
+@Controller // 或 @RequestMapping 		// ①将一个POJO类声明为处理器
+public class HelloWorldController {
+    @RequestMapping(value = "/hello") 	// ②请求URL到处理器功能处理方法的映射
+    public ModelAndView helloWorld() {
+        //1、收集参数		
+        //2、绑定参数到命令对象
+        //3、调用业务对象
+        //4、选择下一个页面
+        ModelAndView mv = new ModelAndView();
+        //添加模型数据 可以是任意的POJO对象
+        mv.addObject("message", "Hello World!");
+        //设置逻辑视图名，视图解析器会根据该名字解析到具体的视图页面
+        mv.setViewName("hello");
+        return mv; 						// ③模型数据和逻辑视图名
+    }
+}
+```
+
+> ① 可以通过在一个 POJO 类上放置@Controller 或@RequestMapping，即可把一个 POJO 类变身为处理器；
+> ② @RequestMapping(value = "/hello") 请求 URL(/hello) 到 处理器的功能处理方法的映射；
+> ③ 模型数据和逻辑视图名的返回
+
+### Spring 配置文件
+
+- HandlerMapping 和 HandlerAdapter 的配置
+
+  ```xml
+  <!--Spring3.1开始的注解 HandlerMapping -->
+  <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+  <!--Spring3.1开始的注解 HandlerAdapter -->
+  <bean
+  class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"/>
+  ```
+
+- 视图解析器的配置
+
+  > 还是使用之前的 org.springframework.web.servlet.view.InternalResourceViewResolver
+
+- 处理器的配置
+
+  ```xml
+  <!-- 处理器 -->
+  <bean class="cn.javass.chapter6.web.controller.HelloWorldController"/>
+  ```
+
+  > 只需要将处理器实现类注册到 spring 配置文件即可，spring 的 DefaultAnnotationHandlerMapping 或
+  > RequestMappingHandlerMapping 能根据注解@Controller 或@RequestMapping 自动发现
+
+### 视图页面
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Hello World</title>
+</head>
+    <body>
+    ${message}
+    </body>
+</html>
+```
+
+> ${message}：表示显示由HelloWorldController处理器传过来的模型数据
+
+### 启动服务器测试
+
+地址栏输入 http://localhost:9080/springmvc-chapter6/hello，我们将看到页面显示“Hello World!”，表示成功了。
+
+## 运行流程
+
+![image-20230821112122492](./.pic/image-20230821112122492.png)
+
+## 处理器定义
+
+### @Controller
+
+```java
+@Controller
+public class HelloWorldController {
+	...
+}
+```
+
+> 推荐使用这种方式声明处理器，它和我们的@Service、@Repository 很好的对应了我们常见的三层开发架构的组件
+
+### @RequestMapping
+
+```java
+@RequestMapping
+public class HelloWorldController {
+	...
+}
+```
+
+> 这种方式也是可以工作的，但如果在类上使用@ RequestMapping 注解一般是用于**窄化功能**处理方法的映射的
+
+### 窄化请求映射
+
+```java
+package cn.javass.chapter6.web.controller;
+@Controller
+@RequestMapping(value="/user") 			// ①处理器的通用映射前缀
+public class HelloWorldController2 {
+    @RequestMapping(value = "/hello2") 	// ②相对于①处的映射进行窄化
+    public ModelAndView helloWorld() {
+    //省略实现
+    }
+}
+```
+
+> ①类上的@RequestMapping(value="/user") 表示处理器的通用请求前缀；
+> ②处理器功能处理方法上的是对①处映射的窄化。
+
+> 因此 http://localhost:9080/springmvc-chapter6/hello2 无法映射到 HelloWorldController2 的 helloWorld 功能处理方法；而
+> http://localhost:9080/springmvc-chapter6/user/hello2 是可以的。
+
+> 窄化请求映射可以认为是方法级别的@RequestMapping ，继承类级别的@RequestMapping
+
+## 请求映射
+
+![image-20230821112837727](./.pic/image-20230821112837727.png)
+
+- http 请求信息包含六部分信息：
+  ① 请求方法，如 GET 或 POST，表示提交的方式；
+  ② URL，请求的地址信息；
+  ③ 协议及版本；
+  ④ 请求头信息（包括 Cookie 信息）；
+  ⑤ 回车换行（ CRLF ）；
+  ⑥ 请求内容区（即请求的内容或数据），如表单提交时的参数数据、URL 请求参数（?abc=123 ？后边的）等。
+- 想要了解 HTTP/1.1 协议，请访问 http://tools.ietf.org/html/rfc2616。
+- 那此处我们可以看到有①、②、④、⑥一般是可变的，因此我们可以这些信息进行请求到处理器的功能处理方法的映射，因此请求的映射分为如下几种：
+  - URL 路径映射：使用 URL 映射请求到处理器的功能处理方法；
+  - 请求方法映射限定：如限定功能处理方法只处理 GET 请求；
+  - 请求参数映射限定：如限定只处理包含“abc”请求参数的请求；
+  - 请求头映射限定：如限定只处理“Accept=application/json”的请求。
+
+### URL 路径映射
+
+- 普通 URL 路径映射
+
+  `@RequestMapping(value={"/test1", "/user/create"})`： 多个URL路径可以映射到同一个处理器的功能处理方法。
+
+-  URI 模板模式映射
+  - `@RequestMapping(value="/users/{userId}") `：{×××}占位符，请求的 URL 可以是 `/users/123456`或`/users/abcd`，通过@PathVariable 可以提取 URI 模板模式中的{×××}中的×××变量。
+  - `@RequestMapping(value="/users/{userId}/create")`：这样也是可以的，请求的 URL 可以是`/users/123/create`。
+  - `@RequestMapping(value="/users/{userId}/topics/{topicId}")`：这样也是可以的，请求的 URL 可以是`/users/123/topics/123`。
+
+- Ant 风格的 URL 路径映射
+  - `@RequestMapping(value="/users/**") `：可以匹配`/users/abc/abc`，但`/users/123`将会被【URI模板模式映射中的`/users/{userId}`模式优先映射到】
+  - `@RequestMapping(value="/product?") `：可匹配`/product1`或`/producta`，但不匹配`/product`或`/productaa`
+  - `@RequestMapping(value="/product*")` ：可匹配`/productabc`或`/product`，但不匹配`/productabc/abc`
+  - `@RequestMapping(value="/product/*") `：可匹配`/product/abc`，但不匹配`/productabc`
+  - `@RequestMapping(value="/products/**/{productId}")` ：可匹配`/products/abc/abc/123`或`/products/123`，也就是Ant风格和URI模板变量风格可混用
+
+- 正则表达式风格的 URL 路径映射
+
+  - 从 Spring3.0 开始支持正则表达式风格的 URL 路径映射，格式为`{变量名:正则表达式}`，这样我们就可以通过@PathVariable 提取模式中的`{×××：正则表达式匹配的值}`中的×××变量了。
+
+  - `@RequestMapping(value="/products/{categoryCode:\\d+}-{pageNumber:\\d+}")` ： 可以匹配`/products/123-1`，但不能匹配`/products/abc-1`，这样可以设计更加严格的规则。
+
+    > 正则表达式风格的 URL 路径映射是一种特殊的 URI 模板模式映射：
+    > URI 模板模式映射是`{userId}`，不能指定模板变量的数据类型，如是数字还是字符串；
+    > 正则表达式风格的 URL 路径映射，可以指定模板变量的数据类型，可以将规则写的相当复杂。
+
+- 组合使用是或的关系
+
+  如 `@RequestMapping(value={"/test1", "/user/create"})`组合使用是或的关系，即`/test1`或`/user/create`”请求 URL 路径都可以映射到@RequestMapping 指定的功能处理方法。
+
+### 请求方法映射限定
