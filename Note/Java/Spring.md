@@ -316,3 +316,181 @@ public class HelloWorldController2 {
   如 `@RequestMapping(value={"/test1", "/user/create"})`组合使用是或的关系，即`/test1`或`/user/create`”请求 URL 路径都可以映射到@RequestMapping 指定的功能处理方法。
 
 ### 请求方法映射限定
+
+- 请求方法映射限定
+
+  使用`@RequestMapping`来实现`SimpleFormController`的功能
+
+  ```java
+  package cn.javass.chapter6.web.controller.method;
+  //省略import
+  @Controller
+  @RequestMapping("/customers/**") //①处理器的通用映射前缀
+  public class RequestMethodController {
+      @RequestMapping(value="/create", method = RequestMethod.GET)//②类级别的@RequestMapping窄化
+      public String showForm() {
+          System.out.println("===============GET");
+          return "customer/create";
+      }
+      @RequestMapping(value="/create", method = RequestMethod.POST)//③类级别的@RequestMapping窄化
+      public String submit() {
+          System.out.println("================POST");
+          return "redirect:/success";
+      }
+  }
+  ```
+
+  > ①处理器的通用映射前缀（父路径）：表示该处理器只处理匹配`/customers/**`的请求；
+  > ②对类级别的`@RequestMapping` 进行窄化，表示 showForm 可处理匹配`/customers/**/create`且请求方法为`GET`的请求；
+  > ③对类级别的`@RequestMapping` 进行窄化，表示 submit 可处理匹配`/customers/**/create`且请求方法为`POST`的请求。
+
+- 组合使用是或的关系
+
+  `@RequestMapping(value="/methodOr", method = {RequestMethod.POST, RequestMethod.GET})`：即请求方法可以是GET或POST。
+
+  > 一般浏览器只支持GET、POST请求方法，如想浏览器支持PUT、DELETE等请求方法只能模拟
+  >
+  > 除了GET、POST，还有HEAD、OPTIONS、PUT、DELETE、TRACE
+  >
+  > DispatcherServlet默认开启对GET、POST、PUT、DELETE、HEAD的支持
+  >
+  > 如果需要支持OPTIONS、TRACE，需要添加DispatcherServlet在web.xml的初始化参数：dispatchOptionsRequest和dispatchTraceRequest为true
+
+### 请求参数数据映射限定
+
+- 请求数据中有指定参数名
+
+  ```java
+  package cn.javass.chapter6.web.controller.parameter;
+  //省略import
+  @Controller
+  @RequestMapping("/parameter1") //①处理器的通用映射前缀
+  public class RequestParameterController1 {
+      //②进行类级别的@RequestMapping窄化
+      @RequestMapping(params="create", method=RequestMethod.GET)
+      public String showForm() {
+          System.out.println("===============showForm");
+          return "parameter/create";
+      }
+      //③进行类级别的@RequestMapping窄化
+      @RequestMapping(params="create", method=RequestMethod.POST)
+      public String submit() {
+          System.out.println("================submit");
+          return "redirect:/success";
+      }
+  }
+  ```
+
+  > ②`@RequestMapping(params="create", method=RequestMethod.GET)` ：表示请求中有`create`的参数名且请求方法为`GET`即可匹配，如可匹配的请求URL `http://×××/parameter1?create`；
+  > ③`@RequestMapping(params="create", method=RequestMethod.POST)`：表示请求中 有`create`的参数名且请求方法为`POST`即可匹配；
+
+  此处的create请求参数名表示你请求的动作，即你想要的功能的一个标识，常见的CRUD(增删改查)我们可以使用如下请求参数名来表达：
+
+  - （create请求参数名 且 GET请求方法） 新增页面展示、（create请求参数名 且 POST请求方法） 新增提交；
+  - （update请求参数名 且 GET请求方法） 新增页面展示、（update请求参数名 且 POST请求方法） 新增提交；
+  - （delete请求参数名 且 GET请求方法） 新增页面展示、（delete请求参数名 且 POST请求方法） 新增提交；
+  - （query请求参数名 且 GET请求方法） 新增页面展示、（query请求参数名 且 POST请求方法） 新增提交；
+  - （list请求参数名 且 GET请求方法） 列表页面展示；
+  - （view请求参数名 且 GET请求方法） 查看单条记录页面展示。
+
+- 请求数据中没有指定参数名
+
+  ```java
+  //请求参数不包含 create参数名
+  @RequestMapping(params="!create", method=RequestMethod.GET)//进行类级别的@RequestMapping 窄化
+  ```
+
+  > `@RequestMapping(params="!create", method=RequestMethod.GET)`： 表示请求中没有 `create`参数名且请求方法为`GET`即可匹配，如可匹配的请求URL `http://×××/parameter1?abc`。
+
+- 请求数据中指定参数名=值
+
+  ```java
+  package cn.javass.chapter6.web.controller.parameter;
+  // 省略import
+  @Controller
+  @RequestMapping("/parameter2")			// ①处理器的通用映射前缀
+  public class RequestParameterController2 {
+      // ②进行类比级别的@RequestMapping窄化
+      @RequestMapping(params="submitFlag=create", mrthod=RequestMethod.GET)
+      public String showForm() {
+          System.out.println("===============showForm");
+          return "parameter/create";
+      }
+      // ③进行类级别的@RequestMapping窄化
+      @RequestMapping(params="submitFlag=create", method=RequestMethod.POST)
+      public String submit() {
+          System.out.println("===============submit");
+          return "redirect:/success";
+      }
+  }
+  ```
+
+  > ② `@RequestMapping(params="submitFlag=create", method=RequestMethod.GET)`：表示请求中有`submitFlag=create` 请求参数且请求方法为 `GET` 即可匹配，如请求URL为 `http://×××/parameter2?submitFlag=create`
+  > ③ `@RequestMapping(params="submitFlag=create", method=RequestMethod.POST)` ：表示请求中有`submitFlag=create`请求参数且请求方法为`POST`即可匹配
+
+  此处的submitFlag=create请求参数表示你请求的动作，即你想要的功能的一个标识，常见的CRUD(增删改查)我们可以使用如下请求参数名来表达：
+
+  - （submitFlag=create请求参数名 且 GET请求方法） 新增页面展示、（submitFlag=create请求参数名 且 POST请求方法） 新增提交；
+  - （submitFlag=update请求参数名 且 GET请求方法） 新增页面展示、（submitFlag=update请求参数名 且 POST请求方法） 新增提交；
+  - （submitFlag=delete请求参数名 且 GET请求方法） 新增页面展示、（submitFlag=delete请求参数名 且 POST请求方法） 新增提交；
+  - （submitFlag=query请求参数名 且 GET请求方法） 新增页面展示、 （submitFlag=query请求参数名 且 POST 请求方法） 新增提交；
+  - （submitFlag=list请求参数名 且 GET请求方法） 列表页面展示；
+  - （submitFlag=view请求参数名 且 GET请求方法） 查看单条记录页面展示。
+
+- 请求数据中指定参数名!=值
+
+  ```java
+  // 请求参数submitFlag不等于create
+  @RequestMapping(params="submitFlag!=create", method=RequuestMethod.GET)
+  ```
+
+  > `@RequestMapping(params="submitFlag!=create", method=RequestMethod.GET) `：表示请求中的参数 `submitFlag!=create` 且请求方法为`GET` 即可匹配，如可匹配的请求URL `http://×××/parameter1?submitFlag=abc`。
+
+- 组合使用是且的关系
+
+  ```java
+  @RequestMapping(params={"test1", "test2=create"}) //②进行类级别的@RequestMapping窄化
+  ```
+
+  > `@RequestMapping(params={"test1", "test2=create"})`：表示请求中的有 `test1`参数名且有`test2=create”`参数即可匹配，如可匹配的请求URL`http://×××/parameter3?test1&test2=create`。
+
+### 请求头数据映射限定
+
+- 请求头数据中有指定参数名
+  1. `@RequestMapping(value="/header/test1", headers = "Accept")`：表示请求的URL必须为`/header/test1`且 请求头中必须有 Accept 参数才能匹配。
+  2. `@RequestMapping(value="/header/test1", headers = "abc")`：表示请求的URL必须为`/header/test1`且 请求头中必须有 abc 参数才能匹配
+
+- 请求头数据中没有指定参数名
+
+  `@RequestMapping(value="/header/test2", headers = "!abc")`：表示请求的URL必须为`/header/test2`且 请求头中必须没有 abc 参数才能匹配。
+
+- 请求头数据中指定参数名=值
+
+  1. `@RequestMapping(value="/header/test3", headers = "Content-Type=application/json")`：表示请求的URL必须为`/header/test3` 且 请求头中必须有`Content-Type=application/json`参数即可匹配
+
+  > 当你请求的URL为`/header/test3` 但 如果 请求头中没有或不是`Conten t-Type=application/json`参数（如`text/html`其他参数），将返回`HTTP Status 415`状态码【表示不支持的媒体类型(Media Type)，也就是MIME类型】，即我们的功能处理方法只能处理`application/json` 的媒体类型。
+
+  2. `@RequestMapping(value="/header/test4", headers = "Accept=application/json")`：表示请求的URL必须为`/header/test4` 且 请求头中必须有`Accept =application/json`参数即可匹配。
+
+  > 当你请求的URL为“/header/test4” 但 如果 请求头中没有`Accept=application/json`参数（如`text/html`其他参数），将返回`HTTP Status 406`状态码【不可接受，服务器无法根据Accept头的媒体类型为客户端生成响应】，即客户只接受`application/json`媒体类型的数据，即我们的功能处理方法的响应只能返回`application/json`媒体类型的数据。
+
+  3. `@RequestMapping(value="/header/test5", headers = "Accept=text/*") `：表示请求的URL必须为`/header/test5` 且 请求头中必须有如`Accept=text/plain`参数即可匹配。
+
+  > `Accept=text/*`：表示主类型为text，子类型任意，如`text/plain`、`text/html`等都可以匹配。
+
+  4. `@RequestMapping(value="/header/test6", headers = "Accept=*/*")` ：表示请求的URL必须为`/header/test6` 且 请求头中必须有任意Accept参数即可匹配。
+
+  > `Accept=*/*`：表示主类型任意，子类型任意，如`text/plain`、`application/xml`等都可以匹配。
+
+- 请求头数据中指定参数名!=值
+
+  `@RequestMapping(value="/header/test7", headers = "Accept!=text/vnd.wap.wml")`：表示请求的URL必须为`/header/test7` 且 请求头中必须有`Accept`参数但值不等于`text/vnd.wap.wml`即可匹配。
+
+- 组合使用是且的关系
+
+  `@RequestMapping(value="/header/test8", headers = {"Accept!=text/vnd.wap.wml", "abc=123"}`：表示请求的URL必须为`/header/test8` 且 请求头中必须有`Accept`参数但值不等于`text/vnd.wap.wml`且 请求中必须有参数`abc=123`即可匹配。
+
+  > 注：`Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8`如果您的请求中含有 `Accept：“*/*”`，则可以匹配功能处理方法上的如`text/html`、`text/*`，`application/xml`等。
+
+### 生产者、消费者限定
+
