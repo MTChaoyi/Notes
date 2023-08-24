@@ -494,3 +494,23 @@ public class HelloWorldController2 {
 
 ### 生产者、消费者限定
 
+## 注解式控制器的数据验证、类型转换及格式化
+
+### 简介
+
+在编写可视化项目时，通常要对数据进行类型转换、验证及格式化
+
+- Spring3之前，使用如下架构进行类型转换、验证及格式化
+
+  ![image-20230823095545538](./.pic/image-20230823095545538.png)
+
+  流程：
+  ①：类型转换：首先调用 PropertyEditor 的 setAsText（String），内部根据需要调s/用 setValue(Object)方法进行设置转换后
+  的值；
+  ②：数据验证：需要显示调用 Spring 的 Validator 接口实现进行数据验证；
+  ③：格式化显示：需要调用 PropertyEditor 的 getText 进行格式化显示。
+
+  使用如上 架构的 缺点 是： ：
+  （1、PropertyEditor 被设计为只能 String<——>Object 之间转换，不能任意对象类型<——>任意类型，如我们常见的 Long 时间戳到 Date 类型的转换是办不到的；
+  （2、PropertyEditor 是线
+
