@@ -518,3 +518,456 @@ create table EMPLOYEE (
     - **nullable** 属性允许当生成模式时，一个列可以被标记为非空。
 
     - **unique** 属性允许列中只能含有唯一的内容
+
+- 应用类
+
+  ```java
+  import java.util.List;
+  import java.util.Date;
+  import java.util.Iterator;
+  
+  import org.hibernate.HibernateException;
+  import org.hibernate.Session;
+  import org.hibernate.Transaction;
+  import org.hibernate.cfg.AnnotationConfiguration;
+  import org.hibernate.SessionFactory;
+  import org.hibernate.cfg.Configuration;
+  
+  public class ManarEmployee {
+      private static SessionFactory factory;
+      public static void main(String[] args) {
+          try {
+              factory = new AnnotationConfiguration().
+                  configure().
+                  // addPackage("com.xyz"). // 如果有使用包则添加包
+                  addAnnotatedClass(Employee.class).
+                  buildSessionFactory();
+          } catch(Throwable ex) {
+              System.err.println("无法创建 sessionFactory 对象。" + ex);
+              throw new ExceptionInitializerError(ex);
+          }
+          ManageEmployee ME = new ManageEmployee();
+          
+          /* 在数据库中添加一些员工记录 */
+          Integer empID1 = ME.addEmployee("Zara", "Ali", 1000);
+          Integer empID2 = ME.addEmployee("Daisy", "Das", 5000);
+          Integer empID3 = ME.addEmployee("John", "Paul", 10000);
+          
+          /* 列出所有员工 */
+          ME.listEmployees();
+          
+          /* 更新员工记录 */
+          ME.updateEmployee(empID1, 5000);
+          
+          /* 从数据库中删除员工 */
+          ME.deleteEmployee(empID2);
+          
+          /* 列出新员工名单 */
+          ME.listEmployees();
+      }
+      /* 在数据库中创建员工的方法 */
+      public Inter addEmployee(String fname, String lname, int salary) {
+          Session session = factory.openSession();
+          Transaction tx = null;
+          Integer employeeID = null;
+          try {
+              tx = session.beginTransaction();
+              Employee employee = new Employee();
+              employee.setFirstName(fname);
+              employee.setLastName(lname);
+              employee.setSalary(salary);
+              employeeID = (Integer) session.save(employee);
+              tx.commit();
+          } catch(HibernateException e) {
+              if(tx!=null) tx.rollback();
+              e.printStackTrace();
+          } finally {
+              session.close();
+          }
+          return employeeID;
+      }
+      /* 读取所有员工的方法 */
+      public void listEmployees() {
+          Session session = factory.openSession();
+          Transaction tx = null;
+          try {
+              tx = session.beginTransaction();
+              List employees = session.createQuery("FROM Employee").list();
+              for(Iterator iterator = employees.iterator(); iterator.hasNext();) {
+                  Employee employee = (Employee)iterator.next();
+                  System.out.print("First Name: " + employee.getFirstName());
+                  System.out.print("Last Name: " + employee.getLastName());
+                  System.out.println("Salary: " + employee.getSalary());
+              }
+              tx.commit();
+          } catch(HibernateException e) {
+              if(tx!=null) tx.rollback();
+              e.printStackTrace();
+          } finally {
+              session.close();
+          }
+      }
+      /* 更新员工工资的方法 */
+      public void updateEmployee(Integer EmployeeID, int salary) {
+          Session session = factory.openSession();
+          Transaction tx = null;
+          try {
+              tx = session.beginTransaction();
+              Employee employee = (Employee)session.get(Employee.class, EmployeeID);
+              employee.setSalary(salary);
+              session.update(employee);
+              tx.commit();
+          } catch(HibernateException e) {
+              if(tx!=null) tx.rollback();
+              e.printStackTrace();
+          } finally {
+              session.close();
+          }
+      }
+      /* 从记录中删除员工的方法 */
+      pulbic void deleteEmployee(Integer EmployeeID) {
+          Session session = factory.openSession();
+          Transaction tx = null;
+          try {
+              tx = session.beginTransaction();
+              Employee employee = (Employee)session.get(Employee.class, EmployeeID);
+              session.delete(employee);
+              tx.commit();
+          } catch(HibernateException e) {
+              if(tx!=null) tx.rollback();
+              e.printStackTrace();
+          } finally {
+              session.close();
+          }
+      }
+  }
+  ```
+
+- hibernate 配置文件
+
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <!DOCTYPE hibernate-configuration SYSTEM 
+  "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+  
+  <hibernate-configuration>
+      <session-factory>
+          <property name="hibernate.dialect">
+              org.hibernate.dialect.MySQLDialect
+          </property>
+          <property name="hibernate.connection.driver_class">
+              com.mysql.jdbc.Driver
+          </property>
+          
+          <property name="hibernate.connection.url">
+              jdbc:mysql://localhost/test
+          </property>
+          <property name="hibernate.connection.username">
+              root
+          </property>
+          <property name="hibernate.connrction.password">
+              root
+          </property>
+      </session-factory>
+  </hibernate-configuration>
+  ```
+
+# Hibernate 查询语言
+
+> Hibernate 查询语言（HQL）是一种面向对象的查询语言，类似于 SQL，但不是去对表和列进行操作，而是面向对象和它们的属性。HQL 查询被 Hibernate 翻译为传统的 SQL 查询，从而对数据库进行操作。
+>
+> 在 HQL 中一些关键词比如 SELECT，FROM 和 WHERE 等，是不区分大小写的，但是一些属性比如表名和列名是区分大小写的。
+
+## FROM 语句
+
+如果你想要在存储中加载一个完整并持久的对象,你将使用 FROM 语句。以下是 FROM 语句的一些简单的语法：
+
+```java
+String hql = "FROM Employee";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+如果你需要在 HQL 中完全限定类名，只需要指定包和类名，如下：
+
+```java
+String hql = "FROM com.hibernatebook.criteria.Employee";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## AS 语句
+
+在 HQL 中 AS 语句能用来给类分配别名，尤其是在长查询的情况下。
+
+关键字 AS 是可选择的
+
+```java
+String hql = "FROM Employee AS E";
+// String hql = "FROM Employee E";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## SELECT 语句
+
+SELECT 语句比 from 语句提供了更多的对结果集的控制。如果只想得到对象的几个属性而不是整个对象，需要使用 SELECT 语句
+
+```java
+String hql = "SELECT E.firstName FROM Employee E";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## WHERE 语句
+
+如果想要精确地从数据库存储中返回特定对象，需要使用 WHERE 语句
+
+```java
+String hql = "FROM Employee E WHERE E.id = 10";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## ORDER BY 语句
+
+ORDER BY 可以利用任意一个属性对结果进行排序，默认使用升序（ASC），可使用降序（DESC）。可以对多个属性排序
+
+```java
+String hql = "FROM Employee E WHERE E.id > 10 " +
+    "ORDER BY E.firstname DESC, E.salary DESC";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## GROUP BY 语句
+
+基于某种属性的值将结果进行编组，通常配合聚合方法使用
+
+```java
+String hql = "SELECT SUM(E.salary), E.firstName FROM Employee E " +
+    "GROUP BY E.firstName";
+Query query = session.createQuery(hql);
+List result = query.list();
+```
+
+## 使用命名参数
+
+Hibernate 的 HQL 查询功能支持命名参数。这使得 HQL 查询功能既能接受来自用户的简单输入，又无需防御 SQL 注入攻击
+
+```java
+String hql = "FROM Employee E WHERE E.id = :employee_id";
+Query query = session.createQuery(hql);
+query.setParameter("employee_id", 10);
+List results = query.list();
+```
+
+## UPDATE 语句
+
+UPDATE 语句能够更新一个或多个对象的一个或多个属性
+
+```java
+String hql = "UPDATE Employee set salary = :salary " +
+    "WHERE id = :employee_id";
+Query query = session.createQuery(hql);
+query.setParameter("salary", 1000);
+query.setParameter("employee_id", 10);
+int result = query.excuteUpdate();
+System.out.println("Rows affected: " + result);
+```
+
+## DELETE 语句
+
+DELETE 语句可以删除一个或多个对象
+
+```java
+String hql = "DELETE FROM Employee " +
+    "WHERE id = :employee_id";
+Query query = session.createQuery(hql);
+query.setParameter("employee_id", 10);
+int result = query.executeUpdate();
+System.out.println("Rows affected: " + result);
+```
+
+## INSERT 语句
+
+HQL 只有当记录从一个对象插入到另一个对象时才支持 INSERT INTO 语句
+
+```java
+String hql = "INSERT INTO Employee(firstName, lastName, salary) " +
+    "SELECT firstName, lastName, salary FROM old_employee";
+Query query = session.createQuery(hql);
+int result = query.executeUpdate();
+System.out.println("Rows affected: " + result);
+```
+
+## 聚合方法
+
+HQL 类似于 SQL，支持一系列的聚合方法
+
+|           方法            |          描述          |
+| :-----------------------: | :--------------------: |
+|    avg(property name)     |      属性的平均值      |
+| count(property name or *) | 属性在结果中出现的次数 |
+|    max(property name)     |     属性值的最大值     |
+|    min(property name)     |     属性值的最小值     |
+|    sum(property name)     |      属性值的总和      |
+
+`distinct` 关键字表示只计算行集中的唯一值
+
+```java
+String hql = "SELECT count(distinct E.firstName) FROM Employee E";
+Query query = session.createQuery(hql);
+List results = query.list();
+```
+
+## 分页查询
+
+|                  方法                   |                            描述                             |
+| :-------------------------------------: | :---------------------------------------------------------: |
+| Query setFirstResult(int startPosition) |      该方法以一个整数表示结果中的第一行，从第 0 行开始      |
+|   Query setMaxResults(int maxResult)    | 这个方法告诉 Hibernate 来检索固定数量，即 maxResults 个对象 |
+
+```java
+String hql = "FROM EMployee";
+Query query = session.createQuery(hql);
+query.setFirstResult(1);
+query.setMaxResults(10);
+List results = query.list();
+```
+
+# Hibernate 标准查询
+
+## 标准查询
+
+Hibernate 提供了操纵对象和相应的 RDBMS 表中可用的数据的替代方法。一种方法是标准的 API，它允许你建立一个标准的可编程查询对象来应用过滤规则和逻辑条件。
+
+Hibernate Session 接口提供了`createCriteria()` 方法，可用于创建一个 Criteria 对象，使当您的应用程序执行一个标准查询时返回一个**持久化对象**的类的实例。
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+List results = cr.list();
+```
+
+## 对标准的限制
+
+可以使用 `add()` 方法去添加一个标准查询的限制
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+cr.add(Restrictions.eq("salary", 2000));
+List results = cr.list();
+```
+
+以下是几个不同情况的例子
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+
+// 获取工资超过2000的记录
+cr.add(Restrictions.gt("salary", 2000));
+
+// 查询工资低于2000的记录
+cr.add(Restrictions.lt("salary", 2000));
+
+// 获取 FirstName 以 zara 开头的记录
+cr.add(Restrictions.like("firstName", "zara%"));
+
+// 上述限制的区分大小写的形式
+cr.add(Restrictions.ilike("firstName", "zara%"));
+
+// 获取工资在1000到2000之间的记录
+cr.add(Restrictions.between("salary", 1000, 2000));
+
+// 检查给定属性是否为 NULL
+cr.add(Restrictions.isNull("salary"));
+
+// 检查给定属性是否不为 NULL
+cr.add(Restrictions.isNotNull("salary"));
+
+// 检查给定属性值是否为空
+cr.add(Restrictions.isEmpty("salary"));
+
+// 检查给定属性值是否不为空
+cr.add(Restrictions.isNotEmpty("salary"));
+```
+
+可使用逻辑表达式创建 AND 或 OR 的条件组合
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+
+Criterion salary = Restrictions.gt("salary", 2000);
+Criterion name = Restrictions.ilike("firstName", "zara%");
+
+// 获取符合OR条件的记录
+LogicalExpression orExp = Restrictions.or(salary, name);
+cr.add(orExp);
+
+// 获取符合AND条件的记录
+LogicalExpression andExp = Restrictions.add(salary, name);
+cr.add(andExp);
+
+List results = cr.list();
+```
+
+## 分页使用标准
+
+|                      方法                       |                          描述                           |
+| :---------------------------------------------: | :-----------------------------------------------------: |
+| public Criteria setFirstResult(int firstResult) | 这种方法需要一个代表结果集第一行的证书，以第 0 行为开始 |
+|  public Criteria setMaxResults(int maxResults)  |     这个方法设置了 Hibernate 检索对象的 maxResults      |
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+cr.setFirstResult(1);
+cr.setMaxResults(10);
+List results = cr.list();
+```
+
+## 排序结果
+
+标准 API 提供了 `org.hibernate.criterion.order` 类可以去根据你的一个对象的属性把你的排序结果集按升序或降序排列
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+// 获取工资超过2000的记录
+cr.add(Restrictions.gt("salary", 2000));
+
+// 按降序对记录进行排序
+cr.addOrder(Order.desc("salary"));
+
+// 按升序对记录进行排序
+cr.addOrder(Order.asc("salary"));
+
+List results = cr.list();
+```
+
+## 预测与聚合
+
+标准 API 提供了 `org.hibernate.criterion.projections` 类可得到各属性值的平均值，最大值或最小值。Projections 类与 Restrictions 类相似，均提供了几个获取预测实例的静态工厂方法
+
+```java
+Criteria cr = session.createCriteria(Employee.class);
+
+// 获取总行数
+cr.setProjection(Projections.rowCount());
+
+// 获取属性的平均值
+cr.setProjection(Projections.avg("salary"));
+
+// 获取属性的不同计数
+cr.setProjection(Projections.countDistinct("firstName"));
+
+// 获取属性最大值
+cr.setProjection(Projections.max("salary"));
+
+// 获取属性最小值
+cr.setProjection(Projections.min("salary"));
+
+// 获取属性的总和
+cr.setProjection(Projections.sum("salary"));
+```
+
+# Hibernate 原生 SQL
+
